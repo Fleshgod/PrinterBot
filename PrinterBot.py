@@ -2,11 +2,9 @@ import telebot
 from telebot.types import Message
 from telebot import types
 import requests
-import misc
-import pprint
 import random
 
-BOT_TOKEN = misc.BOT_TOKEN
+BOT_TOKEN = '878439822:AAEsyy-5dd4PJJG3zleTPSsr5GO3YbY8Ne8'
 BASE_URL = f'https://api.telegram.org/bot{BOT_TOKEN}/'
 
 bot = telebot.TeleBot(BOT_TOKEN)
