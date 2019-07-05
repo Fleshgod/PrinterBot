@@ -3,10 +3,13 @@ from telebot.types import Message
 from telebot import types
 import requests
 import random
+import dropbox
 
+DROPBOX_TOKEN = 'pJ2iewDilZAAAAAAAAAADCRMJ7QQV6Z7U7R7TZwxC8-KkxSwVJvExcYuCGKKFq8C'
 BOT_TOKEN = '878439822:AAEsyy-5dd4PJJG3zleTPSsr5GO3YbY8Ne8'
 BASE_URL = f'https://api.telegram.org/bot{BOT_TOKEN}/'
 
+dbx = dropbox.Dropbox(DROPBOX_TOKEN)
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Ответ на команду /start
@@ -20,7 +23,7 @@ def handle_start_help(message: Message):
 	markup.row(btnGetFile, btnGetPhoto)
 	bot.send_message(message.chat.id, "Что Вам угодно, сударь?", reply_markup=markup)
 
-# Ответ на команду /start
+# Ответ на команду /developer
 @bot.message_handler(commands=['developer'])
 def handle_developer(message: Message):
 	bot.reply_to(message, 'По всем вопросам и предложениям писать @Fleshgod')
@@ -46,11 +49,11 @@ def handle_doc(message: Message):
 		largeFilePhoto = open('large_file.jpg', 'rb')
 		bot.send_photo(message.chat.id, largeFilePhoto)
 	else:
-		path = 'Files/' + message.document.file_id + '___' + message.from_user.first_name + '___' + message.document.file_name 
+		path = '/PrintQueue/' + message.document.file_id + '___' + message.from_user.first_name + '___' + message.document.file_name 
 		file_info = bot.get_file(message.document.file_id)
 		downloaded_file = bot.download_file(file_info.file_path)
 		with open(path,'wb') as new_file:
-			new_file.write(downloaded_file)
+			dbx.files_upload(downloaded_file, path)
 		bot.reply_to(message, "Файл успешно отправлен на печать👍\nID вашего заказа: " + "```" + str(message.document.file_id) + "```" + "\n\n_*ID можно легко скопировать_", parse_mode="Markdown")
 
 # Отправка фото на печать
@@ -59,10 +62,10 @@ def handle_photo(message: Message):
 	file_id = message.photo[-1].file_id
 	file_info = bot.get_file(file_id)
 	indexOfExtention = str(file_info.file_path).find('.')
-	path = 'Files/' + file_id + '___' + message.from_user.first_name + file_info.file_path[indexOfExtention:]
+	path = '/PrintQueue/' + file_id + '___' + message.from_user.first_name + file_info.file_path[indexOfExtention:]
 	downloaded_file = bot.download_file(file_info.file_path)
 	with open(path,'wb') as new_file:
-		new_file.write(downloaded_file)
+		dbx.files_upload(downloaded_file, path)
 	bot.reply_to(message, "Фото успешно отправлено на печать👍\nID вашего заказа: " + "```" + str(message.photo[-1].file_id) + "```" + "\n\n_*ID можно легко скопировать_", parse_mode="Markdown")
 
 # Handles all sent video files
