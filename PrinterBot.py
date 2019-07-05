@@ -61,8 +61,8 @@ def handle_doc(message: Message):
 def handle_photo(message: Message):
 	file_id = message.photo[-1].file_id
 	file_info = bot.get_file(file_id)
-	indexOfExtention = str(file_info.file_path).find('.')
-	path = '/PrintQueue/' + file_id + '___' + message.from_user.first_name + file_info.file_path[indexOfExtention:]
+	fileName = str(file_info.file_path).find('/')
+	path = '/PrintQueue/' + file_id + '___' + message.from_user.first_name + file_info.file_path[fileName+1:]
 	downloaded_file = bot.download_file(file_info.file_path)
 	with open(path,'wb') as new_file:
 		dbx.files_upload(downloaded_file, path)
