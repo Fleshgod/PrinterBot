@@ -52,8 +52,7 @@ def handle_doc(message: Message):
 		path = '/PrintQueue/' + message.document.file_id + '___' + message.from_user.first_name + '___' + message.document.file_name 
 		file_info = bot.get_file(message.document.file_id)
 		downloaded_file = bot.download_file(file_info.file_path)
-		with open(path,'wb') as new_file:
-			dbx.files_upload(downloaded_file, path)
+		dbx.files_upload(downloaded_file, path)
 		bot.reply_to(message, "Файл успешно отправлен на печать👍\nID вашего заказа: " + "```" + str(message.document.file_id) + "```" + "\n\n_*ID можно легко скопировать_", parse_mode="Markdown")
 
 # Отправка фото на печать
@@ -62,11 +61,10 @@ def handle_photo(message: Message):
 	file_id = message.photo[-1].file_id
 	file_info = bot.get_file(file_id)
 	fileName = str(file_info.file_path).find('/')
-	path = '/PrintQueue/' + file_id + '___' + message.from_user.first_name + file_info.file_path[fileName+1:]
+	path = '/PrintQueue/' + file_id + '___' + message.from_user.first_name + '___' + file_info.file_path[fileName+1:]
 	downloaded_file = bot.download_file(file_info.file_path)
-	with open(path,'wb') as new_file:
-		dbx.files_upload(downloaded_file, path)
-	bot.reply_to(message, "Фото успешно отправлено на печать👍\nID вашего заказа: " + "```" + str(message.photo[-1].file_id) + "```" + "\n\n_*ID можно легко скопировать_", parse_mode="Markdown")
+	dbx.files_upload(downloaded_file, path)
+	bot.reply_to(message, "Фото успешно отправлено на печать👍\nID вашего заказа: " + "```" + str(file_id) + "```" + "\n\n_*ID можно легко скопировать_", parse_mode="Markdown")
 
 # Handles all sent video files
 @bot.message_handler(content_types=['video', 'video_note'])
