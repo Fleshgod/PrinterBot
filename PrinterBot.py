@@ -84,42 +84,18 @@ def handle_start(message: Message):
 
 # Append user to data base
 def set_user(message: Message):
-	match = re.fullmatch(r'\/\w+\d+', message.text) 
-	if match:
-		success = False
-		for key, value in dormitories.items():
-			if (key == message.text[1:]):
-				with open(local_data_path, 'rb') as f:
-					BDLines = f.readlines()
-				with open(local_data_path, "wb") as f:
-					for line in BDLines:
-						if line.split()[0] != str(message.chat.id).encode('utf-8'):
-							f.write(line)
-				add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
-				bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
-				success = True
-		if success == False:
-			bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
-	else:
-		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
-	
-# Update user's dormitory
-def set_dormitory(message: Message):
-	if is_user_new(message):
-		sent = bot.send_message(message.chat.id, "Выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
-		bot.register_next_step_handler(sent, set_user)
-	else:
-		success = False
+	if str(message.content_type) == 'text':
 		match = re.fullmatch(r'\/\w+\d+', message.text) 
 		if match:
+			success = False
 			for key, value in dormitories.items():
 				if (key == message.text[1:]):
 					with open(local_data_path, 'rb') as f:
 						BDLines = f.readlines()
 					with open(local_data_path, "wb") as f:
-					    for line in BDLines:
-					        if line.split()[0] != str(message.chat.id).encode('utf-8'):
-					            f.write(line)
+						for line in BDLines:
+							if line.split()[0] != str(message.chat.id).encode('utf-8'):
+								f.write(line)
 					add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 					bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 					success = True
@@ -127,7 +103,37 @@ def set_dormitory(message: Message):
 				bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 		else:
 			bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
-			
+	else:
+		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
+
+# Update user's dormitory
+def set_dormitory(message: Message):
+	if str(message.content_type) == 'text':
+		if is_user_new(message):
+			sent = bot.send_message(message.chat.id, "Выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
+			bot.register_next_step_handler(sent, set_user)
+		else:
+			success = False
+			match = re.fullmatch(r'\/\w+\d+', message.text) 
+			if match:
+				for key, value in dormitories.items():
+					if (key == message.text[1:]):
+						with open(local_data_path, 'rb') as f:
+							BDLines = f.readlines()
+						with open(local_data_path, "wb") as f:
+						    for line in BDLines:
+						        if line.split()[0] != str(message.chat.id).encode('utf-8'):
+						            f.write(line)
+						add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
+						bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
+						success = True
+				if success == False:
+					bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
+			else:
+				bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
+	else:
+		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
+		
 # Handles command /developer
 @bot.message_handler(commands=['developer'])
 def handle_developer(message: Message):
