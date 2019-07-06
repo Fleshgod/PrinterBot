@@ -86,6 +86,7 @@ def handle_start(message: Message):
 def set_user(message: Message):
 	match = re.fullmatch(r'\/\w+\d+', message.text) 
 	if match:
+		success = False
 		for key, value in dormitories.items():
 			if (key == message.text[1:]):
 				with open(local_data_path, "wb") as f:
@@ -94,15 +95,18 @@ def set_user(message: Message):
 					            f.write(line)
 				add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 				bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
+				success = True
 	else:
 		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
-
+	if success = False:
+		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 # Update user's dormitory
 def set_dormitory(message: Message):
 	if is_user_new(message):
 		sent = bot.send_message(message.chat.id, "Выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
 		bot.register_next_step_handler(sent, set_user)
 	else:
+		success = False
 		match = re.fullmatch(r'\/\w+\d+', message.text) 
 		if match:
 			for key, value in dormitories.items():
@@ -115,7 +119,10 @@ def set_dormitory(message: Message):
 					            f.write(line)
 					add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 					bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
+					success = True
 		else:
+			bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
+		if success = False:
 			bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 			
 # Handles command /developer
