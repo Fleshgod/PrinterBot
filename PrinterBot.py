@@ -58,7 +58,7 @@ def backup_DB():
 # @param new_content is a string
 def add_to_DB(new_content):
     with open(local_data_path, 'a+') as f:
-        f.write(new_content)
+        f.write(new_content+'\n')
     backup_DB()
 
 # Buttons
@@ -96,7 +96,7 @@ def set_user(message: Message):
 						for line in BDLines:
 							if line.split()[0] != str(message.chat.id).encode('utf-8'):
 								f.write(line)
-					add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]) + "\n")
+					add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 					bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 					success = True
 			if success == False:
@@ -124,7 +124,7 @@ def set_dormitory(message: Message):
 						    for line in BDLines:
 						        if line.split()[0] != str(message.chat.id).encode('utf-8'):
 						            f.write(line)
-						add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]) + "\n")
+						add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 						bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 						success = True
 				if success == False:
