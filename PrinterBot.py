@@ -28,7 +28,8 @@ dormitories = {
 	'knu16': 'Общежитие №16 КНУ имени Тараса Шевченка',
 	'kpi11': 'Общежитие №11 КПИ имени Игоря Сикорского'
 }
-BDLines = []
+with open(local_data_path, 'rb') as f:
+	BDLines = f.readlines()
 
 
 # Returns True if user is new
@@ -106,6 +107,8 @@ def set_dormitory(message: Message):
 		if match:
 			for key, value in dormitories.items():
 				if (key == message.text[1:]):
+					with open(local_data_path, 'rb') as f:
+						BDLines = f.readlines()
 					with open(local_data_path, "wb") as f:
 					    for line in BDLines:
 					        if line.split()[0] != str(message.chat.id).encode('utf-8'):
