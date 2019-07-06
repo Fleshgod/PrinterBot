@@ -98,7 +98,7 @@ def set_user(message: Message):
 				success = True
 	else:
 		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
-	if success = False:
+	if success == False:
 		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 # Update user's dormitory
 def set_dormitory(message: Message):
@@ -122,7 +122,7 @@ def set_dormitory(message: Message):
 					success = True
 		else:
 			bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
-		if success = False:
+		if success == False:
 			bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 			
 # Handles command /developer
