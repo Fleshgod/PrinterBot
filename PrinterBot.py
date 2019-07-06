@@ -89,10 +89,12 @@ def set_user(message: Message):
 		success = False
 		for key, value in dormitories.items():
 			if (key == message.text[1:]):
+				with open(local_data_path, 'rb') as f:
+					BDLines = f.readlines()
 				with open(local_data_path, "wb") as f:
-					    for line in BDLines:
-					        if line.split()[0] != str(message.chat.id).encode('utf-8'):
-					            f.write(line)
+					for line in BDLines:
+						if line.split()[0] != str(message.chat.id).encode('utf-8'):
+							f.write(line)
 				add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 				bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 				success = True
