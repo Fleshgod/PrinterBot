@@ -21,30 +21,55 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # variables
 BOT_BASE_URL = f'https://api.telegram.org/bot{BOT_TOKEN}/'
 ADMIN_ID = 467167935
+
 local_data_path = 'data.txt'
 dbx_data_path = '/data/data.txt'
-count_in_DB = 3
+
+items_in_DB_item = 3
+index_of_id_in_DB = 0
+index_of_username_in_DB = 1
+index_of_dorm_in_DB = 2
+
 dormitories = {
 	'knu16': 'Общежитие №16 КНУ имени Тараса Шевченка',
 	'kpi11': 'Общежитие №11 КПИ имени Игоря Сикорского'
 }
-with open(local_data_path, 'rb') as f:
-	BDLines = f.readlines()
+with open(local_data_path, 'r') as f:
+	content = f.read()
+BDLines = content.split(';')
 
 
 # Returns True if user is new
 # Returns False if user already exists
 def is_user_new(message):
-	with open(local_data_path, 'rb') as f:
-		BDLines = f.readlines()
-		NewUser = True
+	with open(local_data_path, 'r') as f:
+		content = f.read()
+	BDLines = content.split(';')
+	NewUser = True
 
-		for x in BDLines:
-			BDItem = x.split()
-			if BDItem[0] == str(message.chat.id).encode('utf-8'):
-				NewUser = False
+	for x in BDLines[:-1]:
+		BDItem = x.split()
+		if BDItem[index_of_id_in_DB] == str(message.chat.id):
+			NewUser = False
 
 	return NewUser
+
+# Returns dormitory of user
+def get_dormotory(message):
+	if is_user_new(message):
+		sent = bot.send_message(message.chat.id, "Для начала выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
+		bot.register_next_step_handler(sent, set_user)
+	else:
+		with open(local_data_path, 'r') as f:
+			content = f.read()
+		BDLines = content.split(';')
+
+		for x in BDLines[:-1]:
+			BDItem = x.split()
+			if BDItem[index_of_id_in_DB] == str(message.chat.id):
+				return BDItem[index_of_dorm_in_DB]
+	bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С БД! НЕ УДАЕТСЯ НАЙТИ ОБЩАГУ СУЩЕСТВУЮЩЕГО ПОЛЬЗОВАТЕЛЯ⚠️⚠️⚠️')
+
 
 # Upload DB to dropbox
 def backup_DB():
@@ -52,13 +77,13 @@ def backup_DB():
         try:
             dbx.files_upload(f.read(), dbx_data_path, mode=WriteMode('overwrite'))
         except ApiError as err:
-            bot.send_message(ADMIN_ID, 'ПРОБЛЕМА С БД!!!')
+            bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С ЗАГРУЗКОЙ БД В ОБЛАКО⚠️⚠️⚠️')
 
 # Add data to DB
 # @param new_content is a string
 def add_to_DB(new_content):
     with open(local_data_path, 'a+') as f:
-        f.write(new_content+'\n')
+        f.write(str(new_content)+';')
     backup_DB()
 
 # Buttons
@@ -90,12 +115,13 @@ def set_user(message: Message):
 			success = False
 			for key, value in dormitories.items():
 				if (key == message.text[1:]):
-					with open(local_data_path, 'rb') as f:
-						BDLines = f.readlines()
-					with open(local_data_path, "wb") as f:
-						for line in BDLines:
-							if line.split()[0] != str(message.chat.id).encode('utf-8'):
-								f.write(line)
+					with open(local_data_path, 'r') as f:
+						content = f.read()
+					BDLines = content.split(';')
+					with open(local_data_path, "w") as f:
+						for line in BDLines[:-1]:
+							if line.split()[0] != str(message.chat.id):
+								f.write(str(line)+';')
 					add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 					bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 					success = True
@@ -118,12 +144,13 @@ def set_dormitory(message: Message):
 			if match:
 				for key, value in dormitories.items():
 					if (key == message.text[1:]):
-						with open(local_data_path, 'rb') as f:
-							BDLines = f.readlines()
-						with open(local_data_path, "wb") as f:
-						    for line in BDLines:
-						        if line.split()[0] != str(message.chat.id).encode('utf-8'):
-						            f.write(line)
+						with open(local_data_path, 'r') as f:
+							content = f.read()
+						BDLines = content.split(';')
+						with open(local_data_path, "w") as f:
+						    for line in BDLines[:-1]:
+						        if line.split()[0] != str(message.chat.id):
+						            f.write(str(line)+';')
 						add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
 						bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 						success = True
@@ -191,7 +218,7 @@ def handle_doc(message: Message):
 			largeFilePhoto = open('large_file.jpg', 'rb')
 			bot.send_photo(message.chat.id, largeFilePhoto, reply_markup=markup)
 		else:
-			path = '/PrintQueue/' + message.document.file_id + '___' + message.from_user.first_name + '___' + message.document.file_name 
+			path = '/PrintQueue/' + get_dormotory(message) + '/' + message.document.file_id + '___' + message.from_user.first_name + '___' + message.document.file_name 
 			file_info = bot.get_file(message.document.file_id)
 			downloaded_file = bot.download_file(file_info.file_path)
 			dbx.files_upload(downloaded_file, path)
@@ -207,7 +234,7 @@ def handle_photo(message: Message):
 		file_id = message.photo[-1].file_id
 		file_info = bot.get_file(file_id)
 		fileName = str(file_info.file_path).find('/')
-		path = '/PrintQueue/' + file_id + '___' + message.from_user.first_name + '___' + file_info.file_path[fileName+1:]
+		path = '/PrintQueue/' + get_dormotory(message) + '/' + file_id + '___' + message.from_user.first_name + '___' + file_info.file_path[fileName+1:]
 		downloaded_file = bot.download_file(file_info.file_path)
 		dbx.files_upload(downloaded_file, path)
 		bot.reply_to(message, "Фото успешно отправлено на печать👍\nID вашего заказа: " + "```" + str(file_id) + "```" + "\n\n_*ID можно легко скопировать_", parse_mode="Markdown", reply_markup=markup)
