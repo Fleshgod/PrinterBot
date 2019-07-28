@@ -22,7 +22,6 @@ bot = telebot.TeleBot(BOT_TOKEN)
 BOT_BASE_URL = f'https://api.telegram.org/bot{BOT_TOKEN}/'
 ADMIN_ID = 467167935
 
-local_data_path = 'data.txt'
 dbx_data_path = '/data/data.txt'
 
 items_in_DB_item = 3
@@ -34,17 +33,34 @@ dormitories = {
 	'knu16': 'Общежитие №16 КНУ имени Тараса Шевченка',
 	'kpi11': 'Общежитие №11 КПИ имени Игоря Сикорского'
 }
-with open(local_data_path, 'r') as f:
-	content = f.read()
-BDLines = content.split(';')
 
+# Buttons
+markup = types.ReplyKeyboardMarkup()
+markup.resize_keyboard = True
+btnGetFile = types.KeyboardButton('Напечатать файл🖨')
+btnGetPhoto = types.KeyboardButton('Напечатать фотографию🖼')
+btnSetDorm = types.KeyboardButton('Выбрать общагу🏣')
+markup.row(btnGetFile, btnGetPhoto)
+markup.row(btnSetDorm)
+
+
+# Download a file. Return the bytes of the file, or None if it doesn't exist.
+def get_database():
+	try:
+		md, res = dbx.files_download(dbx_data_path)
+	except dropbox.exceptions.HttpError as err:
+		bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С БД! НЕ УДАЕТСЯ СЧИТАТЬ БАЗУ ДАННЫХ С СЕРВЕРОВ DROPBOX (func: get_database)⚠️⚠️⚠️')
+		return None
+	data = res.content
+	return data
+
+# Save DataBase from Dropbox in string type
+BDLines = get_database().decode('utf-8').split(';')
 
 # Returns True if user is new
 # Returns False if user already exists
 def is_user_new(message):
-	with open(local_data_path, 'r') as f:
-		content = f.read()
-	BDLines = content.split(';')
+	BDLines = get_database().decode('utf-8').split(';')
 	NewUser = True
 
 	for x in BDLines[:-1]:
@@ -60,40 +76,41 @@ def get_dormotory(message):
 		sent = bot.send_message(message.chat.id, "Для начала выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
 		bot.register_next_step_handler(sent, set_user)
 	else:
-		with open(local_data_path, 'r') as f:
-			content = f.read()
-		BDLines = content.split(';')
+		BDLines = get_database().decode('utf-8').split(';')
 
 		for x in BDLines[:-1]:
 			BDItem = x.split()
 			if BDItem[index_of_id_in_DB] == str(message.chat.id):
 				return BDItem[index_of_dorm_in_DB]
-	bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С БД! НЕ УДАЕТСЯ НАЙТИ ОБЩАГУ СУЩЕСТВУЮЩЕГО ПОЛЬЗОВАТЕЛЯ⚠️⚠️⚠️')
+	bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С БД! НЕ УДАЕТСЯ НАЙТИ ОБЩАГУ СУЩЕСТВУЮЩЕГО ПОЛЬЗОВАТЕЛЯ (func: get_dormitory)⚠️⚠️⚠️')
 
-
-# Upload DB to dropbox
-def backup_DB():
-    with open(local_data_path, 'rb') as f:
-        try:
-            dbx.files_upload(f.read(), dbx_data_path, mode=WriteMode('overwrite'))
-        except ApiError as err:
-            bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С ЗАГРУЗКОЙ БД В ОБЛАКО⚠️⚠️⚠️')
-
-# Add data to DB
+# Add 'new_content' to DB
 # @param new_content is a string
 def add_to_DB(new_content):
-    with open(local_data_path, 'a+') as f:
-        f.write(str(new_content)+';')
-    backup_DB()
+	try:
+		md, res = dbx.files_download(dbx_data_path)
+	except dropbox.exceptions.HttpError as err:
+		bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С БД! НЕ УДАЕТСЯ СЧИТАТЬ БАЗУ ДАННЫХ С СЕРВЕРОВ DROPBOX (func: add_to_DB)⚠️⚠️⚠️')
+		return None
+	data = res.content.decode('utf-8') + new_content + ';'
+	try:
+		dbx.files_upload(data.encode('utf-8'), dbx_data_path, mode=WriteMode('overwrite'))
+	except ApiError as err:
+		bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С ЗАГРУЗКОЙ БД НА СЕРВЕРА DROPBOX (func: backup_DB)⚠️⚠️⚠️')
 
-# Buttons
-markup = types.ReplyKeyboardMarkup()
-markup.resize_keyboard = True
-btnGetFile = types.KeyboardButton('Напечатать файл🖨')
-btnGetPhoto = types.KeyboardButton('Напечатать фотографию🖼')
-btnSetDorm = types.KeyboardButton('Выбрать общагу🏣')
-markup.row(btnGetFile, btnGetPhoto)
-markup.row(btnSetDorm)
+# Reolace 'old_content' with 'new_content'
+# @params new_content and old_content are a string
+def replace_in_DB(old_content, new_content):
+	try:
+		md, res = dbx.files_download(dbx_data_path)
+	except dropbox.exceptions.HttpError as err:
+		bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С БД! НЕ УДАЕТСЯ СЧИТАТЬ БАЗУ ДАННЫХ С СЕРВЕРОВ DROPBOX (func: replace_in_DB)⚠️⚠️⚠️')
+		return None
+	data = res.content.decode('utf-8').replace(old_content, new_content)
+	try:
+		dbx.files_upload(data.encode('utf-8'), dbx_data_path, mode=WriteMode('overwrite'))
+	except ApiError as err:
+		bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ПРОБЛЕМА С ЗАГРУЗКОЙ БД НА СЕРВЕРА DROPBOX (func: replace_in_DB)⚠️⚠️⚠️')
 
 # Handles command /start
 @bot.message_handler(commands=['start'])
@@ -107,24 +124,22 @@ def handle_start(message: Message):
 		sent = bot.send_message(message.chat.id, "Выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
 		bot.register_next_step_handler(sent, set_dormitory)
 
-# Append user to data base
+# Append user to data base (append message sender)
 def set_user(message: Message):
 	if str(message.content_type) == 'text':
 		match = re.fullmatch(r'\/\w+\d+', message.text) 
 		if match:
-			success = False
+			success = True
 			for key, value in dormitories.items():
 				if (key == message.text[1:]):
-					with open(local_data_path, 'r') as f:
-						content = f.read()
-					BDLines = content.split(';')
-					with open(local_data_path, "w") as f:
-						for line in BDLines[:-1]:
-							if line.split()[0] != str(message.chat.id):
-								f.write(str(line)+';')
-					add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
-					bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
-					success = True
+					BDLines = get_database().decode('utf-8').split(';')
+					for line in BDLines[:-1]:
+						if line.split()[index_of_id_in_DB] == str(message.chat.id):
+							success = False
+							bot.send_message(ADMIN_ID, '⚠️⚠️⚠️ФУНКЦИЯ set_user БЫЛА ВЫЗВАНА ДЛЯ ЗАРЕГИСТРИРОВАНОГО ПОЛЬЗОВАТЕЛЯ⚠️⚠️⚠️')
+					if success == True:
+						add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
+						bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 			if success == False:
 				bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 		else:
@@ -139,27 +154,24 @@ def set_dormitory(message: Message):
 			sent = bot.send_message(message.chat.id, "Выбери в какой общаге ты хочешь печатать🖨\n\n*Список доступных общаг:*\n/knu16\n/kpi11", parse_mode="Markdown", reply_markup=markup)
 			bot.register_next_step_handler(sent, set_user)
 		else:
-			success = False
 			match = re.fullmatch(r'\/\w+\d+', message.text) 
 			if match:
+				success = False
 				for key, value in dormitories.items():
 					if (key == message.text[1:]):
-						with open(local_data_path, 'r') as f:
-							content = f.read()
-						BDLines = content.split(';')
-						with open(local_data_path, "w") as f:
-						    for line in BDLines[:-1]:
-						        if line.split()[0] != str(message.chat.id):
-						            f.write(str(line)+';')
-						add_to_DB(str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
-						bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
-						success = True
+						BDLines = get_database().decode('utf-8').split(';')
+						for line in BDLines[:-1]:
+							if line.split()[index_of_id_in_DB] == str(message.chat.id):
+								success = True
+								replace_in_DB(line, str(message.chat.id) + " " + str(message.from_user.username) + " " + str(message.text[1:]))
+								bot.reply_to(message, "Юху🙃\nЯ успешно все записал🙂\nТвоя текущая общага: " + value + "\n\nP.S. Ты всегда можешь поменять общагу для печати нажав на соответсвующую кнопку🏣")
 				if success == False:
 					bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 			else:
 				bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
 	else:
 		bot.reply_to(message, 'Выбери доступную общагу😡\nДля этого нажми на соответсвующую кнопку🏣')
+
 		
 # Handles command /developer
 @bot.message_handler(commands=['developer'])
